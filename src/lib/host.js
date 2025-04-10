@@ -39,12 +39,27 @@ export default async ({ orbitdb, defaultAccess, verbose } = {}) => {
   log('open replicated databases')
 
   let count = 0
+  let failedDbs = []
   for await (const db of databases.iterator()) {
     log('open', db.key)
-    const _db = await orbitdb.open(db.key)
-    count++
+    try {
+      const _db = await orbitdb.open(db.key)
+      count++
+    } catch (err) {
+      log.error(`Failed to open database ${db.key}:`, err.message)
+      failedDbs.push({
+        address: db.key,
+        error: err.message
+      })
+    }
   }
-  log(count, 'databases opened')
+  log(count, 'databases opened successfully')
+  if (failedDbs.length > 0) {
+    log.error(`Failed to open ${failedDbs.length} databases:`)
+    for (const failed of failedDbs) {
+      log.error(`- ${failed.address}: ${failed.error}`)
+    }
+  }
 
   const stop = async () => {
     await orbitdb.ipfs.libp2p.unhandle(voyagerProtocol)

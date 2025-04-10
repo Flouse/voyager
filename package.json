@@ -1,6 +1,6 @@
 {
   "name": "@le-space/voyager",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A storage service OrbitDB databases.",
   "main": "./src/index.js",
   "type": "module",
