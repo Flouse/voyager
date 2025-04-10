@@ -23,7 +23,15 @@ export default async ({ orbitdb, defaultAccess, verbose } = {}) => {
   const auth = await Authorization({ orbitdb, defaultAccess })
 
   const handleMessages = async ({ stream }) => {
-    await pipe(stream, handleRequest({ log, orbitdb, databases, auth }), stream)
+    try {
+      await pipe(stream, handleRequest({ log, orbitdb, databases, auth }), stream)
+    } catch (err) {
+      if (err.message.includes('ended pushable')) {
+        log('Stream ended by peer')
+      } else {
+        log('Stream error:', err)
+      }
+    }
   }
 
   await orbitdb.ipfs.libp2p.handle(voyagerProtocol, handleMessages, { runOnLimitedConnection: true })
