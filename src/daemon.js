@@ -103,6 +103,13 @@ export default async ({ options }) => {
   }
 
   const ipfs = await createHelia({ libp2p, datastore, blockstore })
+  ipfs.libp2p.addEventListener('error', (err) => {
+    console.error('Libp2p error:', err)
+  })
+  
+  process.on('unhandledRejection', (error) => {
+    console.error('Unhandled rejection:', error)
+  })
   const orbitdb = await createOrbitDB({ ipfs, directory: hostDirectory, id: hostId })
   const host = await Host({ defaultAccess, verbose: options.verbose, orbitdb })
 

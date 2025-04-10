@@ -9,7 +9,7 @@ import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { autoNAT } from '@libp2p/autonat'
 import { bootstrap } from '@libp2p/bootstrap'
-
+import { ping } from '@libp2p/ping'
 export const config = ({ privateKey, port, websocketPort, datastore, metrics, staging, ip4, ip6, disableAutoTLS } = {}) => {
   const announceAddrs = []
   
@@ -80,6 +80,7 @@ export const config = ({ privateKey, port, websocketPort, datastore, metrics, st
           } : {})
         })
       }),
+      ping: ping(),
       pubsub: gossipsub({
         emitSelf: true,
         scoreThresholds: {
