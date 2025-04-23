@@ -4,3 +4,6 @@ voyager
 bundle.js*
 host1/
 host2/
+conf/grafana/grafana.db
+*.tgz
+nohup.out

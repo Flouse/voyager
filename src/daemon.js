@@ -13,16 +13,21 @@ import { config as libp2pConfig } from './utils/libp2p-config.js'
 import { rpc as rpcId, appPath, rpcPath, app, host as hostId, hostPath } from './utils/id.js'
 import { saveConfig } from './utils/config-manager.js'
 import { logger, enable } from '@libp2p/logger'
+import { prometheusMetrics } from '@libp2p/prometheus-metrics'
+import { startMetricsServer } from './metrics-server.js'
+import { WebSocketsSecure } from '@multiformats/multiaddr-matcher'
 
 const createRPCIdentity = async ({ id, directory }) => {
   const keystore = await KeyStore({ path: join(rpcPath(directory), 'keystore') })
   const identities = await Identities({ keystore })
   const identity = await identities.createIdentity({ id })
+  const keyPair = await keystore.getKey(id)
   await keystore.close()
   return {
     id: identity.id,
     hash: identity.hash,
-    publicKey: identity.publicKey
+    publicKey: identity.publicKey,
+    keyPair
   }
 }
 
@@ -30,9 +35,12 @@ export default async ({ options }) => {
   options = options || {}
 
   const log = logger('voyager:daemon')
-
+  console.log('options.verbose:', options.verbose)
   if (options.verbose > 0) {
     enable('voyager:daemon' + (options.verbose > 1 ? '*' : ':error'))
+    enable('libp2p:' + (options.verbose > 2 ? '*' : ':error'))
+    enable('helia:' + (options.verbose > 3 ? '*' : ':error'))
+    enable('orbitdb:' + (options.verbose > 4 ? '*' : ':error'))
   }
 
   const defaultAccess = options.allow ? Access.ALLOW : Access.DENY
@@ -40,6 +48,7 @@ export default async ({ options }) => {
   options.verbose = options.verbose || 0
   options.port = options.port || 0
   options.wsport = options.wsport || 0
+  options.allowRestDelete = options.allowRestDelete || false
 
   log('app:', app)
   log('host:', hostId)
@@ -53,9 +62,37 @@ export default async ({ options }) => {
   const blockstore = new LevelBlockstore(join(hostDirectory, '/', 'ipfs', '/', 'blocks'))
   const datastore = new LevelDatastore(join(hostDirectory, '/', 'ipfs', '/', 'data'))
 
-  const libp2p = await createLibp2p(libp2pConfig({ port: options.port, websocketPort: options.wsport }))
+  const authorizedRPCIdentity = await createRPCIdentity({ id: rpcId, directory: options.directory })
+  const libp2p = await createLibp2p(libp2pConfig({ 
+    privateKey: authorizedRPCIdentity.keyPair, 
+    port: options.port, 
+    websocketPort: options.wsport, 
+    datastore: datastore, 
+    metrics: prometheusMetrics(),
+    staging: options.staging,
+    ip4: options.ip4,
+    ip6: options.ip6,
+    disableAutoTLS: options.disableAutoTLS
+  }))
 
-  log('peerid:', libp2p.peerId.toString())
+  console.log('peerid:', libp2p.peerId.toString())
+
+  libp2p.addEventListener('certificate:provision', () => {
+    console.log('A TLS certificate was provisioned')
+  
+    const interval = setInterval(() => {
+      const mas = libp2p
+        .getMultiaddrs()
+        .filter(ma => WebSocketsSecure.exactMatch(ma) && ma.toString().includes('/sni/'))
+        .map(ma => ma.toString())
+  
+      if (mas.length > 0) {
+        console.log('addresses:')
+        console.log(mas.join('\n'))
+        clearInterval(interval)
+      }
+    }, 1_000)
+  })
 
   const addresses = libp2p.getMultiaddrs().map(e => e.toString())
   for (const addr of addresses) {
@@ -66,15 +103,24 @@ export default async ({ options }) => {
   }
 
   const ipfs = await createHelia({ libp2p, datastore, blockstore })
+  ipfs.libp2p.addEventListener('error', (err) => {
+    console.error('Libp2p error:', err)
+  })
+  
+  process.on('unhandledRejection', (error) => {
+    console.error('Unhandled rejection:', error)
+  })
   const orbitdb = await createOrbitDB({ ipfs, directory: hostDirectory, id: hostId })
   const host = await Host({ defaultAccess, verbose: options.verbose, orbitdb })
-
-  const authorizedRPCIdentity = await createRPCIdentity({ id: rpcId, directory: options.directory })
 
   const rpcConfig = {
     address: host.orbitdb.ipfs.libp2p.getMultiaddrs().shift(), // get 127.0.0.1 address
     identities: [authorizedRPCIdentity]
   }
+
+  // do not store the privateKey outside of the keyStore
+  delete rpcConfig.identities[0].keyPair
+
   await saveConfig({ path: appDirectory, config: rpcConfig })
 
   const handleRPCMessages = async ({ stream }) => {
@@ -82,6 +128,13 @@ export default async ({ options }) => {
   }
 
   await host.orbitdb.ipfs.libp2p.handle(voyagerRPCProtocol, handleRPCMessages)
+
+  if (options.metrics) {
+    const metricsPort = typeof options.metrics === 'number' ? options.metrics : 9090;
+    await startMetricsServer(host, { ...options, metricsPort })
+    log('Prometheus metrics server enabled on port ' + metricsPort)
+    log('Pinned databases endpoint enabled')
+  }
 
   process.on('SIGINT', async () => {
     await host.stop()

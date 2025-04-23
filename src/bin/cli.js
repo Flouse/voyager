@@ -23,6 +23,17 @@ yargs(hideBin(process.argv))
           description: 'The port to listen on for WebSockets. Defaults to 0.',
           type: 'number'
         })
+        .option('staging', {
+          alias: 's',
+          type: 'boolean',
+          description: 'Use Let\'s Encrypt staging environment for auto-TLS certificates',
+          default: false
+        })
+        .option('disable-auto-tls', {
+          type: 'boolean',
+          description: 'Disable automatic TLS certificate provisioning',
+          default: false
+        })
     },
     async (argv) => {
       argv.directory = process.env.VOYAGER_PATH || argv.directory
@@ -135,10 +146,33 @@ yargs(hideBin(process.argv))
     alias: 'd',
     type: 'string',
     description: 'Specify a directory to store Voyager, IPFS and OrbitDB data. You can also use VOYAGER_PATH environment variable to specify the directory.'
-  }).option('allow', {
+  })
+  .option('ip4', {
+    type: 'string',
+    description: 'Specify IPv4 address to announce (e.g., --ip4 "1.2.3.4")'
+  })
+  .option('ip6', {
+    type: 'string',
+    description: 'Specify IPv6 address to announce (e.g., --ip6 "2001:db8::1")'
+  })
+  .option('allow', {
     alias: 'a',
     type: 'boolean',
     description: 'Allow anyone to add a database. The default is false.'
+  })
+  .option('metrics', {
+    alias: 'm',
+    description: 'Enable Prometheus metrics server. Optional port number can be specified (default: 9090)',
+    coerce: (arg) => {
+      if (arg === true) return 9090;  // Default port when just --metrics is used
+      if (typeof arg === 'number') return arg;  // Use specified port
+      return false;  // Metrics disabled
+    }
+  })
+  .option('allow-rest-delete', {
+    type: 'boolean',
+    description: 'Allow database deletion via REST API. The default is false.',
+    default: false
   })
   .demandCommand(1, 'Error: specify a command.')
   .help()

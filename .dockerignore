@@ -1,3 +1,4 @@
 # .dockerignore
 .git
 node_modules
+conf/grafana/grafana.db

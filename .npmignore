@@ -1,6 +1,7 @@
 # Don't distribute the dependencies
 node_modules/
-
+voyager/
+frontend/
 .git
 test
 CONTRIBUTING.md

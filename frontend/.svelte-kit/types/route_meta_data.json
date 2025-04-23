@@ -1,0 +1,25 @@
+{
+	"/": [],
+	"/api/databases": [
+		"src/routes/api/databases/+server.ts"
+	],
+	"/api/databases/[address]": [
+		"src/routes/api/databases/[address]/+server.ts"
+	],
+	"/api/users": [
+		"src/routes/api/users/+server.ts"
+	],
+	"/api/users/[id]": [
+		"src/routes/api/users/[id]/+server.ts"
+	],
+	"/databases": [],
+	"/databases/[address]": [],
+	"/demo": [],
+	"/demo/lucia": [
+		"src/routes/demo/lucia/+page.server.ts"
+	],
+	"/demo/lucia/login": [
+		"src/routes/demo/lucia/login/+page.server.ts"
+	],
+	"/users": []
+}

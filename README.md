@@ -68,21 +68,37 @@ Voyager daemon supports several command line options:
 - `--port, -p`: The port to listen on for the libp2p TCP transport. Defaults to 0 (random available port).
 - `--wsport, -w`: The port to listen on for WebSockets. Defaults to 0 (random available port).
 
+**IP Address Announcement**
+- `--ip4`: Specify IPv4 address to announce to the network (e.g., `--ip4 "37.27.185.96"`)
+- `--ip6`: Specify IPv6 address to announce to the network (e.g., `--ip6 "2a01:4f9:c013:cc9::1"`)
+
 **Logging**
 - `--verbose, -v`: Enable verbose logging. Use multiple times (e.g., `-vvv`) for increased verbosity.
 
 **Access Control**
 - `--allow, -a`: Allow anyone to add a database. The default is false (deny all except explicitly authorized users).
+- `--allow-rest-delete`: Allow database deletion via REST API. The default is false.
+
+**Auto-TLS Configuration**
+- `--staging, -s`: Use Let's Encrypt staging environment for auto-TLS certificates. Useful for testing certificate provisioning. Defaults to false (production environment).
+- `--disable-auto-tls`: Disable automatic TLS certificate provisioning. Defaults to false (auto-TLS enabled).
+
+**Metrics**
+- `--metrics, -m [port]`: Enable metrics collection and reporting. Optional port number can be specified (default: 9090). Examples:
+  - `--metrics` or `-m`: Enable with default prometheus port 9090
+  - `--metrics 9099` or `-m 9099`: Enable with custom port 9099
 
 **Storage Location**
 - `--directory, -d`: Specify a directory to store Voyager, IPFS, and OrbitDB data. You can also use the `VOYAGER_PATH` environment variable.
 
 **Example with multiple options:**
 ```sh
-voyager daemon -p 9090 -w 9091 -vvv --allow
+# Using default metrics port (9090)
+voyager daemon -p 9090 -w 9091 -vvv -s --allow --metrics
+
+# Using custom metrics port (9099)
+voyager daemon -p 9090 -w 9091 -vvv -s --allow --metrics 9099
 ```
-
-
 
 ### Docker
 
@@ -262,6 +278,77 @@ addresses: One or more database addresses to remove from the storage
 ```
 
 If successful, an OK response will be sent. If it fails, an error will be returned.
+
+## REST API
+
+When running with `--metrics`, Voyager exposes several HTTP endpoints (default port 9090, configurable with `--metrics <port>`):
+
+### Endpoints
+
+**Metrics**
+- `GET /metrics`: Returns Prometheus metrics
+  ```sh
+  curl http://localhost:9090/metrics
+  ```
+
+**Database Operations**
+- `GET /pinned-databases`: Lists all pinned databases and their metadata
+  ```sh
+  curl http://localhost:9090/pinned-databases
+  ```
+
+- `GET /database-history?address=<db-address>`: Returns the history of operations for a specific database
+  ```sh
+  curl http://localhost:9090/database-history?address=zdpuAkkFknp3H8kAqHPLWUK3Hi44nawtwqkbsVGnwyqAqGvkz
+  ```
+
+- `DELETE /database?address=<db-address>`: Deletes a database (requires `--allow-rest-delete` flag)
+  ```sh
+  curl -X DELETE http://localhost:9090/database?address=zdpuAkkFknp3H8kAqHPLWUK3Hi44nawtwqkbsVGnwyqAqGvkz
+  ```
+
+### Response Examples
+
+**Pinned Databases Response**
+```json
+[
+  {
+    "address": "zdpuAkkFknp3H8kAqHPLWUK3Hi44nawtwqkbsVGnwyqAqGvkz",
+    "name": "my-database",
+    "type": "documentstore",
+    "accessController": "ipfs",
+    "entries": [...]
+  }
+]
+```
+
+**Database History Response**
+```json
+{
+  "address": "zdpuAkkFknp3H8kAqHPLWUK3Hi44nawtwqkbsVGnwyqAqGvkz",
+  "name": "my-database",
+  "type": "documentstore",
+  "accessController": "ipfs",
+  "history": [
+    {
+      "hash": "zdpuAkkFknp3H8k...",
+      "id": "04123...",
+      "payload": { ... },
+      "identity": "04ab12...",
+      "timestamp": 1647356813,
+      "next": ["zdpuAkkFknp3H8k..."],
+      "v": 1
+    }
+  ]
+}
+```
+
+**Error Responses**
+- 400: Bad Request (e.g., missing address parameter)
+- 403: Forbidden (when trying to delete without `--allow-rest-delete`)
+- 404: Not Found
+- 500: Internal Server Error
+- 503: Service Unavailable (when host is not available)
 
 ## Allowing and Denying User Access
 

@@ -1,0 +1,32 @@
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 9191:3000
+    user: "${GRAFANA_UID:-472}:${GRAFANA_GID:-472}" # chown 472:472 /var/lib/grafana
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana:/var/lib/grafana
+    restart: unless-stopped
+  voyager:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "9091:9091"
+      - "9092:9092"
+    command: ["node", "./src/bin/cli.js", "daemon", "-p", "9091", "-w", "9092", "-m", "-vvvv", "-d", "/app/data"]
+    restart: always
+    volumes:
+      - ./voyager:/app/data

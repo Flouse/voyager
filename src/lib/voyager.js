@@ -21,17 +21,27 @@ export default async ({ orbitdb, address }) => {
   }
 
   const add = async (addresses) => {
-    const addDBs = () => [request(Requests.ADD, toArray(addresses))]
-    const stream = await orbitdb.ipfs.libp2p.dialProtocol(address, voyagerProtocol, { runOnLimitedConnection: true })
-    const added = await pipe(addDBs, stream, parseResponse)
-    return added
+    try {
+      const addDBs = () => [request(Requests.ADD, toArray(addresses))]
+      const stream = await orbitdb.ipfs.libp2p.dialProtocol(address, voyagerProtocol, { runOnLimitedConnection: true })
+      const added = await pipe(addDBs, stream, parseResponse)
+      return added
+    } catch (error) {
+      console.warn('Failed to add db to voyager:', error.message)
+      return false
+    }
   }
 
   const remove = async (addresses) => {
-    const removeDBs = () => [request(Requests.REMOVE, toArray(addresses))]
-    const stream = await orbitdb.ipfs.libp2p.dialProtocol(address, voyagerProtocol, { runOnLimitedConnection: true })
-    const removed = await pipe(removeDBs, stream, parseResponse)
-    return removed
+    try {
+      const removeDBs = () => [request(Requests.REMOVE, toArray(addresses))]
+      const stream = await orbitdb.ipfs.libp2p.dialProtocol(address, voyagerProtocol, { runOnLimitedConnection: true })
+      const removed = await pipe(removeDBs, stream, parseResponse)
+      return removed
+    } catch (error) {
+      console.warn('Failed to remove db from voyager:', error.message)
+      return false
+    }
   }
 
   return {
