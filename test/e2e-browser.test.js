@@ -185,7 +185,7 @@ describe('End-to-End Browser Tests', function () {
       await voyager2.add(db1.address)
       console.timeEnd('add2')
 
-      console.time('replicate')
+      console.time('replicate2')
       const db2 = await voyager2.orbitdb.open(db1.address)
 
       const onConnected = (peerId, heads) => {
@@ -195,7 +195,7 @@ describe('End-to-End Browser Tests', function () {
       db2.events.on('join', onConnected)
 
       await waitFor(() => replicated, () => true)
-      console.timeEnd('replicate')
+      console.timeEnd('replicate2')
 
       const res = await db2.all()
 

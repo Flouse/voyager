@@ -21,6 +21,6 @@ describe('Commands - address', function () {
   it('shows the voyager\'s addresses', function () {
     const addresses = execSync('./src/bin/cli.js address')
     const res = addresses.toString().trimRight().split('\n')
-    strictEqual(res.length, 4)
+    strictEqual(res.length, 6)
   })
 })
