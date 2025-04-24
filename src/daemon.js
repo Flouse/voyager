@@ -1,18 +1,18 @@
-import { join } from 'path'
-import { createLibp2p } from 'libp2p'
-import { createHelia } from 'helia'
+import { enable, logger } from '@libp2p/logger'
 import { createOrbitDB, Identities, KeyStore } from '@orbitdb/core'
 import { LevelBlockstore } from 'blockstore-level'
 import { LevelDatastore } from 'datastore-level'
+import { createHelia } from 'helia'
 import { pipe } from 'it-pipe'
-import Host from './lib/host.js'
-import { voyagerRPCProtocol } from './rpc/protocol.js'
-import { handleCommand } from './rpc/index.js'
+import { createLibp2p } from 'libp2p'
+import { join } from 'path'
 import { Access } from './lib/authorization.js'
-import { config as libp2pConfig } from './utils/libp2p-config.js'
-import { rpc as rpcId, appPath, rpcPath, app, host as hostId, hostPath } from './utils/id.js'
+import Host from './lib/host.js'
+import { handleCommand } from './rpc/index.js'
+import { voyagerRPCProtocol } from './rpc/protocol.js'
 import { saveConfig } from './utils/config-manager.js'
-import { logger, enable } from '@libp2p/logger'
+import { app, appPath, host as hostId, hostPath, rpc as rpcId, rpcPath } from './utils/id.js'
+import { config as libp2pConfig } from './utils/libp2p-config.js'
 
 const createRPCIdentity = async ({ id, directory }) => {
   const keystore = await KeyStore({ path: join(rpcPath(directory), 'keystore') })
@@ -53,10 +53,9 @@ export default async ({ options }) => {
   const blockstore = new LevelBlockstore(join(hostDirectory, '/', 'ipfs', '/', 'blocks'))
   const datastore = new LevelDatastore(join(hostDirectory, '/', 'ipfs', '/', 'data'))
 
-  const libp2p = await createLibp2p(libp2pConfig({ port: options.port, websocketPort: options.wsport }))
+  const libp2p = await createLibp2p(libp2pConfig({ port: options.port, websocketPort: options.wsport, ip4: options.ip4, ip6: options.ip6 }))
 
   log('peerid:', libp2p.peerId.toString())
-
   const addresses = libp2p.getMultiaddrs().map(e => e.toString())
   for (const addr of addresses) {
     console.log(addr)

@@ -3,6 +3,11 @@ name: Build Docker Image
 
 on:
   push:
+    branches:
+      - dev
+      - 'release/*'
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 env:

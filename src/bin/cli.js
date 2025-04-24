@@ -23,6 +23,14 @@ yargs(hideBin(process.argv))
           description: 'The port to listen on for WebSockets. Defaults to 0.',
           type: 'number'
         })
+        .option('ip4', {
+          description: 'Specify IPv4 address to announce (e.g., --ip4 "37.27.185.96")',
+          type: 'string'
+        })
+        .option('ip6', {
+          description: 'Specify IPv6 address to announce (e.g., --ip6 "2a01:4f9:c013:cc9::1")',
+          type: 'string'
+        })
     },
     async (argv) => {
       argv.directory = process.env.VOYAGER_PATH || argv.directory

@@ -1,6 +1,8 @@
 node_modules
 coverage
-voyager
+voyager*/
 bundle.js*
 host1/
 host2/
+app/
+host/

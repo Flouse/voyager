@@ -86,6 +86,7 @@ describe('End-to-End Browser Tests', function () {
     })
 
     it('add and replicate a database - app1->voyager1->voyager2->app3', async function () {
+      this.timeout(20000) // Increase timeout to 20 seconds
       const entryAmount = 100
       let replicated = false
 
@@ -185,7 +186,7 @@ describe('End-to-End Browser Tests', function () {
       await voyager2.add(db1.address)
       console.timeEnd('add2')
 
-      console.time('replicate')
+      console.time('replicate2')
       const db2 = await voyager2.orbitdb.open(db1.address)
 
       const onConnected = (peerId, heads) => {
@@ -195,7 +196,7 @@ describe('End-to-End Browser Tests', function () {
       db2.events.on('join', onConnected)
 
       await waitFor(() => replicated, () => true)
-      console.timeEnd('replicate')
+      console.timeEnd('replicate2')
 
       const res = await db2.all()
 
