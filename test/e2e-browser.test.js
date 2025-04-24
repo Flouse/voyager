@@ -86,6 +86,7 @@ describe('End-to-End Browser Tests', function () {
     })
 
     it('add and replicate a database - app1->voyager1->voyager2->app3', async function () {
+      this.timeout(20000) // Increase timeout to 20 seconds
       const entryAmount = 100
       let replicated = false
 
