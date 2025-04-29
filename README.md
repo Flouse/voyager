@@ -68,6 +68,10 @@ Voyager daemon supports several command line options:
 - `--port, -p`: The port to listen on for the libp2p TCP transport. Defaults to 0 (random available port).
 - `--wsport, -w`: The port to listen on for WebSockets. Defaults to 0 (random available port).
 
+**IP Address Configuration**
+- `--ip4`: Specify IPv4 address to announce (e.g., --ip4 "37.27.185.96").
+- `--ip6`: Specify IPv6 address to announce (e.g., --ip6 "2a01:4f9:c013:cc9::1").
+
 **Logging**
 - `--verbose, -v`: Enable verbose logging. Use multiple times (e.g., `-vvv`) for increased verbosity.
 
@@ -79,7 +83,7 @@ Voyager daemon supports several command line options:
 
 **Example with multiple options:**
 ```sh
-voyager daemon -p 9090 -w 9091 -vvv --allow
+voyager daemon -p 9090 -w 9091 -vvv --allow --ip4 "37.27.185.96"
 ```
 
 
